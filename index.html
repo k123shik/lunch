@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lunch Manager</title>
+<style>
+  :root {
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    --bg: #f4f4f4;
+    --panel: #f4f4f4;
+    --text: #333333;
+    --muted: #666666;
+    --border: #9aa0a6;
+    --field: #ffffff;
+    --field-disabled: #ececec;
+    --btn: #eeeeee;
+    --btn-border: #c9c9c9;
+    --error: #a30000;
+    --nav1: #0d2159;
+    --nav2: #0f6a99;
+    --login-field: #e8f0fe;
+    --ink: #0d1b4c;
+    --ok: #1b6e3a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #1b1d21; --panel: #1b1d21; --text: #e4e6ea; --muted: #a0a6b0;
+      --border: #5a616b; --field: #262a30; --field-disabled: #2c3036;
+      --btn: #2f343b; --btn-border: #4a515b; --error: #ff7b7b; --ok: #6ccf93;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #1b1d21; --panel: #1b1d21; --text: #e4e6ea; --muted: #a0a6b0;
+    --border: #5a616b; --field: #262a30; --field-disabled: #2c3036;
+    --btn: #2f343b; --btn-border: #4a515b; --error: #ff7b7b; --ok: #6ccf93;
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); height: 100%; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100%;
+    background: var(--bg); color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+    font-size: 14px;
+  }
+  [hidden] { display: none !important; }
+
+  /* Top bar (same on both pages) */
+  .topbar {
+    display: flex; align-items: center; gap: 14px;
+    height: 46px; padding: 0 14px;
+    background: linear-gradient(90deg, var(--nav1), var(--nav2));
+    color: #fff; position: relative;
+  }
+  .topbar .brand { font-weight: 800; font-size: 22px; letter-spacing: .5px; display: flex; align-items: center; gap: 8px; }
+  .topbar .sub { font-size: 15px; }
+  .topbar .page-title {
+    position: absolute; left: 50%; transform: translateX(-50%);
+    font-size: 28px; font-weight: 600; white-space: nowrap;
+  }
+  .topbar .spacer { flex: 1; }
+  .icon-btn { background: none; border: 0; color: #fff; cursor: pointer; padding: 4px; display: flex; }
+  .icon-btn:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+    outline: 2px solid #4da3ff; outline-offset: 2px;
+  }
+  #logout { font-size: 13px; border: 1px solid rgba(255,255,255,.6); border-radius: 4px; padding: 4px 10px; }
+
+  /* Login */
+  .login-wrap { display: flex; justify-content: center; padding: 70px 16px; }
+  .login-box {
+    width: min(630px, 100%); border: 1px solid var(--ink); border-radius: 8px;
+    padding: 8px; background: #fff;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .login-box { background: #262a30; } }
+  :root[data-theme="dark"] .login-box { background: #262a30; }
+  .login-inner {
+    background: linear-gradient(160deg, #0d2159 0%, #0f4a7d 55%, #0f6f9c 100%);
+    padding: 20px 16px 24px; display: flex; flex-direction: column; align-items: center; gap: 12px;
+  }
+  .login-field {
+    position: relative; width: min(280px, 100%);
+  }
+  .login-field svg { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); }
+  .login-field input {
+    width: 100%; height: 38px; padding: 0 10px 0 38px;
+    background: #e8f0fe; color: #000; border: 1px solid #0d1b4c; border-radius: 4px; font-size: 14px;
+  }
+  .login-btn {
+    margin-top: 6px; height: 38px; padding: 0 12px; font-size: 16px;
+    background: #e0e0e0; color: #000; border: 1px solid #0d1b4c; border-radius: 4px; cursor: pointer;
+  }
+  .login-error { color: #ffd1d1; font-size: 13px; min-height: 18px; margin: 0; }
+
+  /* Form page */
+  .tab-wrap { padding: 14px 14px 0; }
+  .tab {
+    display: inline-block; padding: 6px 9px; font-size: 14px; color: #0d3b78;
+    background: var(--field); border: 1px solid var(--border); border-bottom: 0; border-radius: 3px 3px 0 0;
+    position: relative; top: 1px;
+  }
+  :root[data-theme="dark"] .tab { color: #8ec5ff; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .tab { color: #8ec5ff; } }
+  .panel {
+    margin: 0 14px; border: 1px dotted var(--border); border-top-style: dotted; padding: 14px 16px 22px;
+    background: var(--panel);
+  }
+  .row { display: grid; grid-template-columns: 305px minmax(0, 1fr); align-items: start; margin-bottom: 8px; }
+  .row > label { padding-top: 6px; }
+  .note { margin: 0 0 6px; padding: 6px 0; }
+  .field { display: flex; flex-direction: column; }
+  select, input[type=date], textarea {
+    background: var(--field); color: var(--text);
+    border: 1px solid var(--btn-border); border-radius: 3px; font: inherit; padding: 0 8px;
+  }
+  select, input[type=date] { height: 30px; width: 300px; max-width: 100%; }
+  select:disabled { background: var(--field-disabled); }
+  textarea { width: 100%; max-width: 1450px; height: 110px; padding: 8px; resize: vertical; }
+  .invalid { border-color: var(--error) !important; }
+  .err { color: var(--error); font-size: 12px; margin-top: 4px; min-height: 0; }
+  .actions { display: flex; justify-content: space-between; max-width: 1050px; margin: 10px 0 0 340px; }
+  .btn {
+    background: var(--btn); color: var(--text); border: 1px solid var(--btn-border);
+    border-radius: 3px; padding: 6px 12px; font: inherit; cursor: pointer;
+  }
+  .btn:hover { filter: brightness(.96); }
+  .msg { margin: 12px 0 0 305px; color: var(--ok); }
+  .msg.bad { color: var(--error); }
+
+  /* Bookings list */
+  .list-title { margin: 22px 14px 8px; font-size: 16px; font-weight: 600; }
+  .table-scroll { margin: 0 14px 30px; overflow-x: auto; }
+  table { border-collapse: collapse; min-width: 560px; width: 100%; background: var(--field); }
+  th, td { border: 1px solid var(--btn-border); padding: 7px 10px; text-align: left; }
+  th { background: var(--field-disabled); font-weight: 600; }
+  td.empty { color: var(--muted); text-align: center; padding: 18px; }
+
+  @media (max-width: 760px) {
+    .topbar .page-title { position: static; transform: none; font-size: 20px; }
+    .topbar .sub { display: none; }
+    .row { grid-template-columns: 1fr; }
+    .row > label { padding-top: 0; padding-bottom: 4px; }
+    .actions { margin-left: 0; }
+    .msg { margin-left: 0; }
+    select, input[type=date] { width: 100%; }
+    .login-wrap { padding-top: 30px; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .btn, .login-btn { transition: filter .15s; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN PAGE ============ -->
+<section id="loginPage">
+  <header class="topbar">
+    <span class="brand">LUNCH</span>
+    <span class="sub">Lunch Booking Tool</span>
+  </header>
+  <div class="login-wrap">
+    <div class="login-box">
+      <form class="login-inner" id="loginForm" autocomplete="off">
+        <div class="login-field">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="#0d1b4c" aria-hidden="true"><circle cx="12" cy="7" r="5"/><path d="M2 22c0-5.5 4.5-9 10-9s10 3.5 10 9z"/></svg>
+          <input id="username" type="text" placeholder="domain\username" aria-label="Username" required>
+        </div>
+        <div class="login-field">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="#0d1b4c" aria-hidden="true"><path d="M6 10V7a6 6 0 0 1 12 0v3h1.5a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1V11a1 1 0 0 1 1-1zm2.5 0h7V7a3.5 3.5 0 0 0-7 0z"/></svg>
+          <input id="password" type="password" placeholder="Password" aria-label="Password" required>
+        </div>
+        <p class="login-error" id="loginError" role="alert"></p>
+        <button class="login-btn" type="submit">Login</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- ============ LUNCH MANAGER PAGE ============ -->
+<section id="appPage" hidden>
+  <header class="topbar">
+    <button class="icon-btn" aria-label="Menu" type="button">
+      <svg width="30" height="26" viewBox="0 0 30 26" fill="#fff"><rect y="2" width="30" height="4"/><rect y="11" width="30" height="4"/><rect y="20" width="30" height="4"/></svg>
+    </button>
+    <span class="brand">LUNCH</span>
+    <span class="sub">Lunch Booking Tool</span>
+    <span class="page-title">Lunch Manager</span>
+    <span class="spacer"></span>
+    <button class="icon-btn" id="logout" type="button">Logout</button>
+  </header>
+
+  <div class="tab-wrap"><span class="tab">Request</span></div>
+  <form class="panel" id="bookForm" novalidate>
+    <div class="row">
+      <label for="emp">Employee Name</label>
+      <div class="field"><select id="emp" disabled></select></div>
+    </div>
+
+    <p class="note">No lunch booking will be created for Saturday and Sunday</p>
+
+    <div class="row">
+      <label for="start">Requested Lunch Start</label>
+      <div class="field"><input id="start" type="date"><div class="err" id="startErr"></div></div>
+    </div>
+    <div class="row">
+      <label for="end">Requested Lunch End</label>
+      <div class="field"><input id="end" type="date"><div class="err" id="endErr"></div></div>
+    </div>
+    <div class="row">
+      <label for="meal">Meal Type</label>
+      <div class="field">
+        <select id="meal">
+          <option value="">Select a value</option>
+          <option>Veg</option>
+          <option>Non Veg</option>
+        </select>
+        <div class="err" id="mealErr"></div>
+      </div>
+    </div>
+    <div class="row" id="nvRow" hidden>
+      <label for="nv">Thursday Non Veg Option</label>
+      <div class="field">
+        <select id="nv">
+          <option value="">Select a value</option>
+          <option>Egg</option>
+          <option>Fish</option>
+        </select>
+        <div class="err" id="nvErr"></div>
+        <div style="color: var(--muted); font-size: 12px; margin-top: 4px;">Non Veg menu: Monday Fish, Tuesday Chicken, Wednesday Fish, Thursday Egg or Fish (your choice), Friday Chicken. Choose below only for Thursday.</div>
+      </div>
+    </div>
+    <div class="row">
+      <label for="reason">Remarks</label>
+      <div class="field"><textarea id="reason"></textarea></div>
+    </div>
+
+    <div class="actions">
+      <button class="btn" type="submit">Save</button>
+      <button class="btn" type="button" id="cancelBtn">Cancel</button>
+    </div>
+    <div class="msg" id="msg" role="status"></div>
+  </form>
+
+  <h2 class="list-title">My lunch bookings</h2>
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Date</th><th>Day</th><th>Meal Type</th><th>Remarks</th><th></th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+</section>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var SESSION_KEY = 'lunch_user';
+  var DATA_KEY = 'lunch_bookings';
+
+  // ---- safe storage helpers ----
+  function sGet(store, k) { try { return store.getItem(k); } catch (e) { return null; } }
+  function sSet(store, k, v) { try { store.setItem(k, v); } catch (e) {} }
+  function sDel(store, k) { try { store.removeItem(k); } catch (e) {} }
+  var memSession = null, memData = null; // fallback if storage is blocked
+
+  function getUser() { return sGet(sessionStorage, SESSION_KEY) || memSession; }
+  function setUser(u) { memSession = u; sSet(sessionStorage, SESSION_KEY, u); }
+  function clearUser() { memSession = null; sDel(sessionStorage, SESSION_KEY); }
+  function loadAll() {
+    var raw = sGet(localStorage, DATA_KEY);
+    if (raw) { try { return JSON.parse(raw); } catch (e) {} }
+    return memData || [];
+  }
+  function saveAll(list) { memData = list; sSet(localStorage, DATA_KEY, JSON.stringify(list)); }
+
+  // ---- date helpers (local time, no timezone drift) ----
+  function pad(n) { return n < 10 ? '0' + n : '' + n; }
+  function fmt(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function parse(s) { var p = s.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+  var DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+  // ---- display name from "domain\user" ----
+  function niceName(u) {
+    var name = u.indexOf('\\') > -1 ? u.split('\\')[1] : u;
+    return name.charAt(0).toUpperCase() + name.slice(1);
+  }
+
+  // ---- page switching ----
+  function show(loggedIn) {
+    $('loginPage').hidden = loggedIn;
+    $('appPage').hidden = !loggedIn;
+    if (loggedIn) initApp();
+  }
+
+  // ---- login ----
+  $('loginForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var u = $('username').value.trim(), p = $('password').value;
+    if (!u || !p) { $('loginError').textContent = 'Enter your username and password.'; return; }
+    // Demo login: any non-empty credentials are accepted.
+    setUser(u);
+    $('password').value = '';
+    $('loginError').textContent = '';
+    show(true);
+  });
+  $('logout').addEventListener('click', function () { clearUser(); show(false); });
+
+  // ---- app ----
+  function initApp() {
+    var u = getUser();
+    var emp = $('emp');
+    emp.innerHTML = '';
+    var o = document.createElement('option');
+    o.textContent = niceName(u);
+    emp.appendChild(o);
+    var today = fmt(new Date());
+    $('start').min = today; $('end').min = today;
+    resetForm();
+    renderRows();
+  }
+
+  function resetForm() {
+    $('start').value = ''; $('end').value = ''; $('meal').value = ''; $('reason').value = '';
+    $('nv').value = ''; $('nvRow').hidden = true;
+    ['startErr','endErr','mealErr','nvErr'].forEach(function (id) { $(id).textContent = ''; });
+    ['start','end','meal','nv'].forEach(function (id) { $(id).classList.remove('invalid'); });
+    $('msg').textContent = ''; $('msg').className = 'msg';
+  }
+  $('cancelBtn').addEventListener('click', resetForm);
+
+  function hasThursday(s, en) {
+    if (!s || !en) return false;
+    for (var d = parse(s), last = parse(en); d <= last; d.setDate(d.getDate() + 1)) {
+      if (d.getDay() === 4) return true;
+    }
+    return false;
+  }
+  ['start', 'end'].forEach(function (id) {
+    $(id).addEventListener('change', function () {
+      if (!hasThursday($('start').value, $('end').value)) flag('nv', 'nvErr', '');
+    });
+  });
+
+  $('meal').addEventListener('change', function () {
+    var nonVeg = $('meal').value === 'Non Veg';
+    $('nvRow').hidden = !nonVeg;
+    if (!nonVeg) { $('nv').value = ''; flag('nv', 'nvErr', ''); }
+    if ($('meal').value) flag('meal', 'mealErr', '');
+  });
+  $('nv').addEventListener('change', function () { if ($('nv').value) flag('nv', 'nvErr', ''); });
+
+  function flag(id, errId, text) {
+    $(errId).textContent = text;
+    $(id).classList.toggle('invalid', !!text);
+    return !text;
+  }
+
+  $('start').addEventListener('change', function () {
+    if ($('start').value) $('end').min = $('start').value;
+    if (!$('end').value) $('end').value = $('start').value; // single-day booking by default
+  });
+
+  $('bookForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var s = $('start').value, en = $('end').value, meal = $('meal').value;
+    var ok = true;
+    ok = flag('start', 'startErr', s ? '' : 'Lunch Start is required') && ok;
+    ok = flag('end', 'endErr', en ? '' : 'Lunch End is required') && ok;
+    ok = flag('meal', 'mealErr', meal ? '' : 'Meal Type is required') && ok;
+    ok = flag('nv', 'nvErr', (meal === 'Non Veg' && hasThursday(s, en) && !$('nv').value) ? 'Thursday option (Egg or Fish) is required' : '') && ok;
+    if (ok && parse(en) < parse(s)) { ok = flag('end', 'endErr', 'Lunch End cannot be before Lunch Start') && ok; }
+    if (!ok) return;
+
+    var user = getUser();
+    var all = loadAll();
+    var taken = {};
+    all.forEach(function (b) { if (b.user === user) taken[b.date] = true; });
+
+    var added = 0, skippedDup = 0, skippedNonThu = 0;
+    var NV = { 1: 'Fish', 2: 'Chicken', 3: 'Fish', 5: 'Chicken' };
+    for (var d = parse(s), last = parse(en); d <= last; d.setDate(d.getDate() + 1)) {
+      var dow = d.getDay();
+      if (dow === 0 || dow === 6) continue; // skip weekend
+      var label = meal === 'Non Veg' ? 'Non Veg - ' + (dow === 4 ? $('nv').value : NV[dow]) : 'Veg';
+      var key = fmt(d);
+      if (taken[key]) { skippedDup++; continue; }
+      all.push({ user: user, date: key, meal: label, reason: $('reason').value.trim() });
+      added++;
+    }
+    saveAll(all);
+    renderRows();
+
+    var text = added + ' lunch booking' + (added === 1 ? '' : 's') + ' saved.';
+    if (skippedDup) text += ' ' + skippedDup + ' day' + (skippedDup === 1 ? ' was' : 's were') + ' already booked.';
+    
+    var bad = added === 0;
+    if (bad && !skippedDup) text = 'No booking created. The selected dates fall on a weekend.';
+    resetForm();
+    $('msg').textContent = text;
+    $('msg').className = 'msg' + (bad ? ' bad' : '');
+  });
+
+  function renderRows() {
+    var user = getUser();
+    var mine = loadAll().filter(function (b) { return b.user === user; })
+      .sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+    var tb = $('rows');
+    tb.innerHTML = '';
+    if (!mine.length) {
+      var tr = document.createElement('tr');
+      var td = document.createElement('td');
+      td.colSpan = 5; td.className = 'empty';
+      td.textContent = 'No bookings yet. Pick a date above and save to book lunch.';
+      tr.appendChild(td); tb.appendChild(tr);
+      return;
+    }
+    mine.forEach(function (b) {
+      var tr = document.createElement('tr');
+      [b.date, DAYS[parse(b.date).getDay()], b.meal, b.reason || ''].forEach(function (t) {
+        var td = document.createElement('td'); td.textContent = t; tr.appendChild(td);
+      });
+      var tdA = document.createElement('td');
+      var btn = document.createElement('button');
+      btn.className = 'btn'; btn.type = 'button'; btn.textContent = 'Cancel booking';
+      btn.addEventListener('click', function () {
+        var rest = loadAll().filter(function (x) { return !(x.user === user && x.date === b.date); });
+        saveAll(rest); renderRows();
+        $('msg').textContent = 'Booking for ' + b.date + ' cancelled.'; $('msg').className = 'msg';
+      });
+      tdA.appendChild(btn); tr.appendChild(tdA);
+      tb.appendChild(tr);
+    });
+  }
+
+  show(!!getUser());
+})();
+</script>
+</body>
+</html>
